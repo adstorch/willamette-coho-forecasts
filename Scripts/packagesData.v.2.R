@@ -19,7 +19,9 @@ packages <- c("openxlsx",
               "scales",
               "postpack",
               "MCMCvis",
-              "HDInterval")
+              "HDInterval",
+              "stringr",
+              "lubridate")# keep
 
 if (!require(install.load)) {
   install.packages("install.load")
@@ -28,30 +30,115 @@ if (!require(install.load)) {
 install.load::install_load(packages)
 
 # query data --------------------------------------------------------------
-browseURL("https://www.fpc.org/web/apps/adultsalmon/Q_adultcounts_annualtotalsquery.php")
+## select: (1) "Willamette Falls Dam", (2) "Coho", (3a) "January 1, 2000",
+## (3b) "default", (4) "Daily counts
+## save file as .xlsx to "\\~Data\\cohoDat_orig.xlsx"
+browseURL("https://www.fpc.org/webapps/adultsalmon/Q_adultcounts_dataquery.php")
 
 # call functions ----------------------------------------------------------
 source("Functions\\round_fun.R")
 
 # data steps --------------------------------------------------------------
 ## read-in raw data
-willCohoRaw.dat <- read.csv(
-  text=paste0(
-    head(
-      readLines(
-        "Data\\cohoDat_orig.csv"
-      ),
-      -2), 
-    collapse="\n"
-  ),
-  colClasses=c(
-    "character",
-    rep(
-      "numeric",
-      3
+
+willCohoRaw.dat <- read.xlsx(
+        "Data\\cohoDat_orig.xlsx",
+        detectDates = TRUE) %>% 
+  head(-2) %>% 
+  mutate(
+    Date = as.Date(Date)
+    ) %>% 
+  mutate(
+    year = as.numeric(
+      year(Date)
     )
-  )
-)
+  ) %>% 
+  select(
+    year,
+    CohoAdult,
+    CohoJack
+  ) %>% 
+  rename(
+    ret_year = year
+  ) %>%
+  rename(
+    adult_cnt = CohoAdult,
+    jack_cnt = CohoJack
+  ) %>%
+  # rename(
+  #   jack_cnt = CohoJack
+  # ) %>% 
+  group_by(
+    ret_year
+  ) %>%
+  summarise(
+    adult_cnt = sum(adult_cnt),
+    jack_cnt = sum(jack_cnt)
+  ) %>% 
+  add_row(
+    ret_year = tail(
+      willCohoRaw.dat$ret_year,1### NEED TO FIX THIS
+    )+1,
+    adult_cnt = NA,
+    jack_cnt = NA
+  ) %>% 
+  mutate(
+    jack_cnt = lag(jack_cnt),
+    jack_year = lag(ret_year)
+  ) %>%
+  # mutate(
+  #   jack_year = lag(ret_year)
+  # ) %>%
+  relocate(jack_year,.after = ret_year)
+
+  
+
+# willCohoRaw.dat$date2 <- as.Date(willCohoRaw.dat$Date)
+# 
+# willCohoRaw.datSub <- subset(willCohoRaw.dat, date2>"2000-01-15")
+# str(willCohoRaw.dat)
+# 
+# 
+#       as.numeric(
+#         willCohoRaw.dat$Date
+#       ),
+#       origin = "1899-12-30"
+#     )
+# 
+# 
+# as.Date(willCohoRaw.dat$Date)
+# 
+# 
+# 
+# 
+#   colClasses=c(
+#     rep(
+#       "character",
+#       2
+#     ),
+#     rep(
+#       "numeric",
+#       2
+#     )
+#   )
+# ) %>% 
+#   head(-2)
+# str(willCohoRaw.dat)
+# 
+# willCohoRaw.dat <- read.csv(
+#   text=paste0(
+#     head(
+#       readLines(
+#         "Data\\cohoDat_orig.csv"
+#       ),
+#       -2), 
+#     collapse="\n"
+#   ),
+#   colClasses=c("character","Date","numeric","numeric"
+#   )
+# )
+# 
+# willCohoRaw.dat$Date2 <- as.Date(willCohoRaw.dat$Date)
 
 ## data manipulation
 willCohoManip.dat <- willCohoRaw.dat %>% 
@@ -65,26 +152,24 @@ willCohoManip.dat <- willCohoRaw.dat %>%
   #   )
   # ) %>% 
   # mutate(
-  #   year = 
-  #     format(
-  #       Date,
-  #       format="%Y"
-  #     )
+  #   year = as.numeric(
+  #     str_sub(Date, start= -4)
+  #   )
   # ) %>% 
-  select(
-    Year,
-    CohoAdult,
-    CohoJack
-  ) %>% 
-  rename(
-    ret_year = Year
-  ) %>%
-  rename(
-    adult_cnt = CohoAdult
-  ) %>%
-  rename(
-    jack_cnt = CohoJack
-  )
+  # select(
+  #   year,
+  #   CohoAdult,
+  #   CohoJack
+  # ) %>% 
+  # rename(
+  #   ret_year = year
+  # ) %>%
+  # rename(
+  #   adult_cnt = CohoAdult
+  # ) %>%
+  # rename(
+  #   jack_cnt = CohoJack
+  # )
   # group_by(
   #   ret_year
   # ) %>% 
@@ -94,14 +179,14 @@ willCohoManip.dat <- willCohoRaw.dat %>%
   # )
 
 ## reformat data
-willCohoInp.dat <- willCohoManip.dat %>% 
-  add_row(
-    ret_year = tail(
-          willCohoManip.dat$ret_year,1
-        )+1,
-    adult_cnt = NA,
-    jack_cnt = NA
-  ) %>% 
+# willCohoInp.dat <- willCohoManip.dat %>% 
+#   add_row(
+#     ret_year = tail(
+#           willCohoManip.dat$ret_year,1
+#         )+1,
+#     adult_cnt = NA,
+#     jack_cnt = NA
+#   ) %>% 
   mutate(
     jack_cnt = lag(jack_cnt)
   ) %>% 
