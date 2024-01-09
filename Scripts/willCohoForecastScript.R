@@ -44,13 +44,13 @@ willCohoOut.dat <- data.frame(
   upr_hdi = numeric()
 )
 
-fitNum <- 23
+# fitNum <- 23
 
 # model function ----------------------------------------------------------
 kf_fun <- function(fitNum){
 
   ## generate a data frame to fit model
-  willCohoFit.dat <- willCohoRaw.dat %>%
+  willCohoFit.dat <- willCohoInp.dat %>%
     drop_na() %>%
     select(
       ret_year,
@@ -60,7 +60,7 @@ kf_fun <- function(fitNum){
     head(fitNum)
 
   ## create a vector to generate prediction
-  willCohoPred.dat <- willCohoRaw.dat %>%
+  willCohoPred.dat <- willCohoInp.dat %>%
     # drop_na() %>%
     select(
       jack_cnt
@@ -213,7 +213,7 @@ kf_fun <- function(fitNum){
     willCohoOut.dat
   ) + 1,] <<- c(
     as.numeric(
-      willCohoRaw.dat %>%
+      willCohoInp.dat %>%
       # drop_na() %>%
         select(
           ret_year
@@ -224,7 +224,7 @@ kf_fun <- function(fitNum){
         tail(1)
     ),
     as.numeric(
-      willCohoRaw.dat %>%
+      willCohoInp.dat %>%
         # drop_na() %>%
         select(
           adult_cnt

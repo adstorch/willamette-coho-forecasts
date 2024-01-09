@@ -1,34 +1,34 @@
-# call packages -----------------------------------------------------------
-packages <- c("openxlsx",
-              "ggplot2",
-              "tidymv",
-              "car",
-              "ggfortify",
-              "gridExtra",
-              "grid",
-              "ggpubr",
-              "openair",
-              "cvTools",
-              "extrafont",
-              "remotes",
-              "R2jags",
-              "dplyr",
-              "broom.mixed",
-              "boot",
-              "ggmcmc",
-              "scales",
-              "postpack",
-              "MCMCvis",
-              "HDInterval",
-              "MLmetrics")
-
-if (!require(install.load)) {
-  install.packages("install.load")
-}
-
-install.load::install_load(packages)
-
-source("Functions\\round_fun.R")
+# # call packages -----------------------------------------------------------
+# packages <- c("openxlsx",
+#               "ggplot2",
+#               "tidymv",
+#               "car",
+#               "ggfortify",
+#               "gridExtra",
+#               "grid",
+#               "ggpubr",
+#               "openair",
+#               "cvTools",
+#               "extrafont",
+#               "remotes",
+#               "R2jags",
+#               "dplyr",
+#               "broom.mixed",
+#               "boot",
+#               "ggmcmc",
+#               "scales",
+#               "postpack",
+#               "MCMCvis",
+#               "HDInterval",
+#               "MLmetrics")
+# 
+# if (!require(install.load)) {
+#   install.packages("install.load")
+# }
+# 
+# install.load::install_load(packages)
+# 
+# source("Functions\\round_fun.R")
 
 # reconcile fonts ---------------------------------------------------------
 # remotes::install_version("Rttf2pt1", version = "1.3.8")
@@ -38,10 +38,10 @@ loadfonts(device = "win")
 windowsFonts()
 
 # data steps --------------------------------------------------------------
-## read-in raw data
-willCohoRaw.dat <- read.xlsx("Data\\cohoDat_inp.xlsx",
-                             sheet = 1,
-                             colNames = TRUE)
+# ## read-in raw data
+# willCohoRaw.dat <- read.xlsx("Data\\cohoDat_inp.xlsx",
+#                              sheet = 1,
+#                              colNames = TRUE)
 
 ## create data frame to store output
 willCohoOut_lm.dat <- data.frame(
@@ -58,7 +58,7 @@ willCohoOut_lm.dat <- data.frame(
 lm_fun <- function(fitNum){
 
   ## generate a data frame to fit model
-  willCohoFit.dat <- willCohoRaw.dat %>%
+  willCohoFit.dat <- willCohoInp.dat %>%
     drop_na() %>%
     select(
       ret_year,
@@ -68,7 +68,7 @@ lm_fun <- function(fitNum){
     head(fitNum)
 
   ## create a vector to generate prediction
-  willCohoPred.dat <- willCohoRaw.dat %>%
+  willCohoPred.dat <- willCohoInp.dat %>%
     # drop_na() %>%
     select(
       jack_cnt
@@ -211,7 +211,7 @@ lm_fun <- function(fitNum){
     willCohoOut_lm.dat
   ) + 1,] <<- c(
     as.numeric(
-      willCohoRaw.dat %>%
+      willCohoInp.dat %>%
       # drop_na() %>%
         select(
           ret_year
@@ -222,7 +222,7 @@ lm_fun <- function(fitNum){
         tail(1)
     ),
     as.numeric(
-      willCohoRaw.dat %>%
+      willCohoInp.dat %>%
         # drop_na() %>%
         select(
           adult_cnt
