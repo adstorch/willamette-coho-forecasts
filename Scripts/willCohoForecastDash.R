@@ -1,7 +1,17 @@
 # call functions ----------------------------------------------------------
-source("Functions\\load_pack_fun.R")
-source("Functions\\round_fun.R")
-source("Functions\\dat_fun.R")
+## create a list of functions
+fun.sources = list(
+  "Functions\\load_pack_fun.R",
+  "Functions\\round_fun.R",
+  "Functions\\dat_fun.R"
+)
+
+## load functions
+sapply(
+  fun.sources,
+  source,
+  .GlobalEnv
+  )
 
 # call packages -----------------------------------------------------------
 load_pack_fun()
@@ -18,3 +28,25 @@ browseURL("https://www.fpc.org/webapps/adultsalmon/Q_adultcounts_dataquery.php")
 begyr <- 2000
 endyr <- 2023
 dat_fun(begyr,endyr)
+
+# call models -------------------------------------------------------------
+## create a list of models to source
+mod.sources = list(
+  "Models\\Kalman Filter.R",
+  "Models\\log-log LM.R",
+  "Models\\untransformed LM.R"
+)
+
+## source models
+sapply(
+  mod.sources,
+  source,
+  .GlobalEnv
+)
+
+## create a list of model objects to iterate over
+### these should be the same names assigned in the model files
+modList <- c(willCohoKF.logmod,
+             willCohoLM.logmod,
+             willCohoLM.mod)
+

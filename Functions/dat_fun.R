@@ -24,7 +24,7 @@ dat_fun <- function(begyr,endyr){
       jack_cnt = CohoJack
     ) %>% 
     filter(
-      ret_year > begyr & ret_year < endyr
+      ret_year >= begyr & ret_year <= endyr
     ) %>% 
     group_by(
       ret_year
@@ -48,5 +48,3 @@ dat_fun <- function(begyr,endyr){
     ) %>%
     relocate(jack_year,.after = ret_year)
 }
-
-dat_fun(2005,2010)

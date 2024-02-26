@@ -22,7 +22,8 @@ load_pack_fun <- function(){
                 "MCMCvis",
                 "HDInterval",
                 "stringr",
-                "lubridate")# keep
+                "lubridate",
+                "MLmetrics")# keep
   
   if (!require(install.load)) {
     install.packages("install.load")

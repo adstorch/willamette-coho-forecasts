@@ -8,9 +8,9 @@ willCohoOut_kf.dat <- data.frame(
 )
 
 
-# fitNum <- 10
+fitNum <- 10
 # model function ----------------------------------------------------------
-willCohoKF_fun <- function(fitNum){
+# willCohoSS_fun <- function(fitNum){
   
   ## generate a data frame to fit model
   willCohoFit.dat <- willCohoInp.dat %>%
@@ -61,16 +61,18 @@ willCohoKF_fun <- function(fitNum){
       as.numeric(
         c(
           willCohoFit.dat$adult_cnt,
+          
           "NA"
         )
       ),
-    jack_cnt =
+    jack_cnt = log(
       c(
         willCohoFit.dat$jack_cnt,
         as.numeric(
           willCohoPred.dat
         )
-      ),
+      )
+    ),
     nObs = nrow(
       willCohoFit.dat
     ) + 1
@@ -89,80 +91,47 @@ willCohoKF_fun <- function(fitNum){
       )
     )
   }
-  
-  # specify model
-  # cat('
-  
-  # model_string <- "
-  #   model {
-  # 
-  #     # observation model
-  #     for (i in 1:nObs){
-  # 
-  #       ### liklihood
-  #       adult_cnt[i] ~ dlnorm(muAdult_cnt[i],tau.e)
-  # 
-  #       ### predictions in log space
-  #       muAdult_cnt[i] <- alpha[i] + beta * jack_cnt_t[i]
-  # 
-  #       jack_cnt_t[i] <- log(jack_cnt[i])
-  # 
-  #       pred[i] <- exp(muAdult_cnt[i])
-  # 
-  #       # ### prediction on the arithmetic scale
-  #       # pred[i] <- exp(muAdult_cnt[i] + sigma^2/2)
-  #     }
-  # 
-  #     # process model for intercept
-  #     for (i in 2:nObs){
-  #       ## define time-varying alpha parameter
-  #       alpha[i] <- alpha[i-1] + Walpha[i]
-  # 
-  #       ## prior for annual deviation among alphas
-  #       Walpha[i] ~ dnorm(0,tau.Walpha)
-  #     }
-  # 
-  #     # priors and definitions
-  # 
-  #     ## define alpha at t=1
-  #     alpha[1] ~ dnorm(0,0.001)
-  # 
-  #     ## define beta prior
-  #     beta ~ dnorm(0,0.001)
-  # 
-  #     ## observation variance
-  #     sig.e ~ dunif(0,1)
-  # 
-  #     ## process variance for intercept
-  #     sig.Walpha ~ dunif(0,1)
-  # 
-  #     ##observation precision
-  #     tau.e<-1/pow(sig.e,2)
-  # 
-  #     ## process precision for intercept
-  #     tau.Walpha<-1/pow(sig.Walpha,2)
-  # 
-  #   }"
-  #     file={willCoho.mod <- tempfile()})
+
+cat('
+  model {
+    # Priors for hyperparameters
+    tau.alpha ~ dgamma(0.01, 0.01)
+    phi ~ dunif(0, 1)
+    
+    # Initial state
+    alpha[1] ~ dnorm(0, 0.01)
+    
+    # State equation
+    for (t in 2:nObs) {
+      alpha[t] ~ dnorm(alpha[t-1] + log(phi), tau.alpha)
+    }
+    
+    # Observation equation
+    for (t in 1:nObs) {
+      lambda[t] <- exp(alpha[t])
+      adult_cnt[t] ~ dpois(lambda[t])
+    }
+  }',
+  file={willCoho.mod <- tempfile()})
   
   ## define parameters to monitor
   willCoho.params <- c(
-    "pred"
+    "adult_cnt"
   )
   
   ## call jags
   start <- Sys.time()
   
-  fit.willCoho <- jags(
+  fit.willCoho <- jags.parallel(
     data = willCohoMod.dat,
     # inits = inits.willComb,  # see above
     parameters.to.save = willCoho.params,
-    model.file = willCohoKF.logmod,
+    model.file = willCoho.mod,
     n.chains = 3,
     n.iter = 1000000,
     n.burnin = 75000,
     n.thin = 10,
-    # n.cluster = 3,
+    n.cluster = 3,
     jags.seed = 1234,
     DIC = F
   )
@@ -180,14 +149,14 @@ willCohoKF_fun <- function(fitNum){
   
   ## extract simulations for current predictions
   pred.mcmc.willCoho <- mcmc.willCoho[, paste(
-    "pred[",nObs,"]",
+    "adult_cnt[",nObs,"]",
     sep = ""
   )]
   
   ## output predictions
   willCohoOut_kf.dat[nrow(
     willCohoOut_kf.dat
-  ) + 1,] <<- c(#### NEED TO ADD < TO OUTPUT
+  ) + 1,] <<- c(
     as.numeric(
       willCohoInp.dat %>%
         # drop_na() %>%
@@ -232,26 +201,9 @@ willCohoKF_fun <- function(fitNum){
       0
     )
   )
-}
+# }
 
-for(fitNum in seq(
-  round_fun(
-    nrow(
-      willCohoInp.dat
-    )*0.40  # 40% of the data will be used to fit the model
-  ),
-  nrow(
-    tail(
-      head(
-        willCohoInp.dat,
-        -1
-      ),
-      -1
-    )
-  ),
-  1
-)
-){
+for(fitNum in seq(10,23,1)){
   willCohoKF_fun(fitNum)
 }
 
@@ -298,62 +250,3 @@ png(filename=paste("Output\\Figures\\willCoho.verifPlot_kf",Sys.Date(),".png",se
 
 print(willCoho.verifPlot_kf)
 dev.off()
-
-
-
-# Load the R2jags package
-library(R2jags)
-
-# Define the model in BUGS language
-model_code <- "
-model {
-  # Likelihood
-  for (i in 1:N) {
-    y[i] ~ dnorm(mu[i], tau) # Normal error
-    mu[i] <- beta0 + beta1 * x[i] # Linear predictor
-    x[i] <- log(X[i]) # Log-transformed independent variable
-  }
-  
-  # Priors
-  beta0 ~ dnorm(0, 0.001) # Vague prior for intercept
-  beta1 ~ dnorm(0, 0.001) # Vague prior for slope
-  tau ~ dgamma(0.01, 0.01) # Vague prior for precision
-  sigma <- 1 / sqrt(tau) # Standard deviation
-  
-  # Back transformation
-  for (i in 1:N) {
-    yhat[i] <- exp(mu[i]) # Retransformed but unadjusted prediction
-  }
-  # gamma <- lm(y ~ yhat - 1)$coef # Regression coefficient for adjustment
-  # for (i in 1:N) {
-  #   yadj[i] <- gamma * yhat[i] # Adjusted retransformed prediction
-  # }
-}
-"
-
-# Define the data
-model_data <- list(
-  N = 100, # Sample size
-  X = c(1:100), # Independent variable
-  y = c(1:100) # Dependent variable
-)
-
-# Define the parameters to save
-model_parameters <- c("beta0", "beta1", "sigma","yhat")
-
-# Run the model
-model_run <- jags(
-  data = model_data,
-  parameters.to.save = model_parameters,
-  model.file = textConnection(model_code),
-  n.chains = 4,
-  n.iter = 1000,
-  n.burnin = 200,
-  n.thin = 2
-)
-
-model_run
-
-source("Models\\Kalman Filter.R")
-model.file = textConnection(willCohoKF.mod)
-

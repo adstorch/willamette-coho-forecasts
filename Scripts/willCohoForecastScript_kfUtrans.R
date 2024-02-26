@@ -1,42 +1,5 @@
-# # call packages -----------------------------------------------------------
-# packages <- c("openxlsx",
-#               "ggplot2",
-#               "tidymv",
-#               "car",
-#               "ggfortify",
-#               "gridExtra",
-#               "grid",
-#               "ggpubr",
-#               "openair",
-#               "cvTools",
-#               "extrafont",
-#               "remotes",
-#               "R2jags",
-#               "dplyr",
-#               "broom.mixed",
-#               "boot",
-#               "ggmcmc",
-#               "scales",
-#               "postpack",
-#               "MCMCvis",
-#               "HDInterval")
-# 
-# if (!require(install.load)) {
-#   install.packages("install.load")
-# }
-# 
-# install.load::install_load(packages)
-# 
-# source("Functions\\round_fun.R")
-# 
-# # data steps --------------------------------------------------------------
-# ## read-in raw data
-# willCohoRaw.dat <- read.xlsx("Data\\cohoDat_inp.xlsx",
-#                              sheet = 1,
-#                              colNames = TRUE)
-
-## create data frame to store output
-willCohoOut_kfUtrans.dat <- data.frame(
+# create data frame to store output ---------------------------------------
+willCohoOut_KFutrans.dat <- data.frame(
   ret_year = numeric(),
   obs_cnt = numeric(),
   post_pred = numeric(),
@@ -45,8 +8,8 @@ willCohoOut_kfUtrans.dat <- data.frame(
 )
 
 # model function ----------------------------------------------------------
-kfUtrans_fun <- function(fitNum){
-
+willCohoKFutrans_fun <- function(fitNum){
+  
   ## generate a data frame to fit model
   willCohoFit.dat <- willCohoInp.dat %>%
     drop_na() %>%
@@ -56,7 +19,7 @@ kfUtrans_fun <- function(fitNum){
       jack_cnt
     ) %>%
     head(fitNum)
-
+  
   ## create a vector to generate prediction
   willCohoPred.dat <- willCohoInp.dat %>%
     # drop_na() %>%
@@ -67,25 +30,25 @@ kfUtrans_fun <- function(fitNum){
       fitNum + 2
     ) %>%
     tail(1)
-
+  
   ## fit OLS to define initial MCMC values
   ### fit OLS
   willCohoInit.mod <- lm(
       adult_cnt ~ jack_cnt,
     data = willCohoFit.dat
   )
-
+  
   ### extract coefficient estimates
   willCohoInit.beta <- as.numeric(
     willCohoInit.mod$coef[2]
   )
-
+  
   willCohoInit.betaSE <- coef(
     summary(
       willCohoInit.mod
     )
   )[2,2]
-
+  
   ## create data list to fit model and generate prediction
   willCohoMod.dat <- list(
     adult_cnt =
@@ -105,7 +68,7 @@ kfUtrans_fun <- function(fitNum){
       willCohoFit.dat
     ) + 1
   )
-
+  
   ## define initial values (user defined initial values are not accepted by
   ## jags.parallel()-default is to let jags estimate initial values; otherwise
   ## use jags() and specify initial values as below)
@@ -119,7 +82,7 @@ kfUtrans_fun <- function(fitNum){
       )
     )
   }
-
+  
   ## specify model
   cat('
     model {
@@ -134,7 +97,7 @@ kfUtrans_fun <- function(fitNum){
         muAdult_cnt[i] <- alpha[i] + beta * (jack_cnt[i] - mean(jack_cnt[]))
         
         ### prediction on the arithmetic scale
-        pred[i] <- exp(muAdult_cnt[i])
+        pred[i] <- muAdult_cnt[i]
       }
       
       # process model for intercept
@@ -167,16 +130,16 @@ kfUtrans_fun <- function(fitNum){
       tau.Walpha<-1/pow(sig.Walpha,2)                 
       
     }',
-    file={willCoho.mod <- tempfile()})
-
+      file={willCoho.mod <- tempfile()})
+  
   ## define parameters to monitor
   willCoho.params <- c(
     "pred"
   )
-
+  
   ## call jags
   start <- Sys.time()
-
+  
   fit.willCoho <- jags.parallel(
     data = willCohoMod.dat,
     # inits = inits.willComb,  # see above
@@ -190,31 +153,31 @@ kfUtrans_fun <- function(fitNum){
     jags.seed = 1234,
     DIC = F
   )
-
+  
   stop <- Sys.time()
   duration <- stop-start
   print(duration)
-
-# review and summarize output --------------------------------------------------
+  
+  # review and summarize output --------------------------------------------------
   ## review bugs object
   fit.willCoho
-
+  
   ## extract simulations matrix
   mcmc.willCoho <- fit.willCoho$BUGSoutput$sims.matrix
-
+  
   ## extract simulations for current predictions
   pred.mcmc.willCoho <- mcmc.willCoho[, paste(
     "pred[",nObs,"]",
     sep = ""
   )]
-
+  
   ## output predictions
-  willCohoOut_kfUtrans.dat[nrow(
-    willCohoOut_kfUtrans.dat
+  willCohoOut_KFutrans.dat[nrow(
+    willCohoOut_KFutrans.dat
   ) + 1,] <<- c(
     as.numeric(
       willCohoInp.dat %>%
-      # drop_na() %>%
+        # drop_na() %>%
         select(
           ret_year
         ) %>%
@@ -240,7 +203,7 @@ kfUtrans_fun <- function(fitNum){
       ),
       0
     ),
-
+    
     round(
       hdi(
         pred.mcmc.willCoho,
@@ -259,18 +222,18 @@ kfUtrans_fun <- function(fitNum){
 }
 
 for(fitNum in seq(10,23,1)){
-  kfUtrans_fun(fitNum)
+  willCohoKFutrans_fun(fitNum)
 }
 
-post_kfUtrans <- willCohoOut_kfUtrans.dat %>% 
+post_KFutrans <- willCohoOut_KFutrans.dat %>% 
   drop_na()
 
-mape.est <- MAPE(
-  post_kfUtrans$post_pred,
-  post_kfUtrans$obs_cnt
+mape_est_KFutrans <- MAPE(
+  post_KFutrans$post_pred,
+  post_KFutrans$obs_cnt
 )*100
 
-willCoho.verifPlot_kfUtrans<-ggplot() +
+willCoho.verifPlot_KFutrans<-ggplot() +
   theme_bw()+
   theme(panel.border = element_blank(),
         panel.grid.major = element_blank(),
@@ -284,21 +247,21 @@ willCoho.verifPlot_kfUtrans<-ggplot() +
         plot.margin = margin(0.5, 1, 0.5, 0.5, "cm"),
         legend.text=element_text(size=12),
         axis.ticks.length = unit(0.15, "cm"))+
-  labs(title ="State-space Model", y = "Observed", x = "Mean posterior predictions") +
+  labs(title ="Kalman Filter", y = "Observed", x = "Mean posterior predictions") +
   theme(plot.title = element_text(hjust = 0.5,size = 16,face = "bold",family = "Times New Roman")) +
   geom_abline(intercept = 0, slope = 1)+
-  geom_point(data = willCohoOut_kfUtrans.dat,aes(post_pred,obs_cnt),shape = 19,size = 3.5,stroke=0.5)+
-  scale_y_continuous(limits=c(0,max(max(willCohoOut_kfUtrans.dat$obs_cnt,na.rm = TRUE),max(willCohoOut_kfUtrans.dat$post_pred, na.rm = TRUE))),breaks = seq(0,max(max(willCohoOut_kfUtrans.dat$obs_cnt,na.rm = TRUE),max(willCohoOut_kfUtrans.dat$post_pred, na.rm = TRUE)),4000),expand = c(0,0))+
-  scale_x_continuous(limits=c(0,max(max(willCohoOut_kfUtrans.dat$obs_cnt,na.rm = TRUE),max(willCohoOut_kfUtrans.dat$post_pred, na.rm = TRUE))),breaks = seq(0,max(max(willCohoOut_kfUtrans.dat$obs_cnt,na.rm = TRUE),max(willCohoOut_kfUtrans.dat$post_pred, na.rm = TRUE)),4000),expand = c(0,0))+
-  annotate(geom = "text",x = 1500, y = 24000, label = paste("MAPE = ",round(mape.est,2),"%",sep = ""),hjust=0,size = 5.1,family = "Times New Roman")
+  geom_point(data = willCohoOut_KFutrans.dat,aes(post_pred,obs_cnt),shape = 19,size = 3.5,stroke=0.5)+
+  scale_y_continuous(limits=c(0,max(max(willCohoOut_KFutrans.dat$obs_cnt,na.rm = TRUE),max(willCohoOut_KFutrans.dat$post_pred, na.rm = TRUE))),breaks = seq(0,max(max(willCohoOut_KFutrans.dat$obs_cnt,na.rm = TRUE),max(willCohoOut_KFutrans.dat$post_pred, na.rm = TRUE)),4000),expand = c(0,0))+
+  scale_x_continuous(limits=c(0,max(max(willCohoOut_KFutrans.dat$obs_cnt,na.rm = TRUE),max(willCohoOut_KFutrans.dat$post_pred, na.rm = TRUE))),breaks = seq(0,max(max(willCohoOut_KFutrans.dat$obs_cnt,na.rm = TRUE),max(willCohoOut_KFutrans.dat$post_pred, na.rm = TRUE)),4000),expand = c(0,0))+
+  annotate(geom = "text",x = 1500, y = 24000, label = paste("MAPE = ",round(mape_est_KFutrans,2),"%",sep = ""),hjust=0,size = 5.1,family = "Times New Roman")
 
 
-png(filename=paste("Output\\Figures\\willCoho.verifPlot_kfUtrans",Sys.Date(),".png",sep=""),
+png(filename=paste("Output\\Figures\\willCoho.verifPlot_KFutrans",Sys.Date(),".png",sep=""),
     type="cairo",
     units="in",
     width=8,
     height=6,
     res=300)
 
-print(willCoho.verifPlot_kfUtrans)
-dev.off() #  turn device off
+print(willCoho.verifPlot_KFutrans)
+dev.off()
