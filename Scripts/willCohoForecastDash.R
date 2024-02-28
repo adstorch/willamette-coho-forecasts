@@ -56,8 +56,8 @@ sapply(
   lapply(
     list(
       ### models to source
-      "Kalman Filter.R"
-      # "log-log LM.R",
+      "Kalman Filter.R",
+      "log-log LM.R"
       # "untransformed LM.R"
     ),
     function(x) paste0("Models\\",x)
@@ -69,12 +69,7 @@ sapply(
 ## create a list of model objects to iterate over
 ### these should be the same names assigned in the model files
 modList <- list(
-  willCohoKF.logmod
-                # "willCohoLM.logmod" = willCohoLM.logmod,
-                # "willCohoLM.mod" = willCohoLM.mod
-                )
-
-
-print(deparse(quote(modList)))
-names(modList[1])
-textConnection(willCohoKF.logmod)
+  "willCohoKF.logmod" = willCohoKF.logmod,
+  "willCohoLM.logmod" = willCohoLM.logmod
+  # "willCohoLM.mod" = willCohoLM.mod
+)

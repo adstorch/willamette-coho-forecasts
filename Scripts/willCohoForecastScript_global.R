@@ -203,17 +203,26 @@ for(fitNum in seq(
 # post <- willCohoOut.dat %>% 
 #   drop_na()
 
-mape_est <- MAPE(
-  head(willCohoOut.dat$post_pred,-1),
-  na.omit(willCohoOut.dat$obs_cnt)
-)*100
+# mape_est <- MAPE(
+#   head(willCohoOut.dat$post_pred,-1),
+#   na.omit(willCohoOut.dat$obs_cnt)
+# )*100
+
+# saveRDS(willCohoOut.dat, file = "Output\\Predictions\\stuff.rds")
 
 print(willCohoOut.dat)
-print(substitute(i))
+# print(namesi)
+for(i in 1:length(modList)){
+  print(i)
 }
 
+}
+
+# counter <- 0
+
 for(i in modList){
-  willCoho_modFun(eval(i))
+  willCoho_modFun(i)
+  
 }
 
 ###### NEED TO ADD HEAD TO GEOM_POINT
