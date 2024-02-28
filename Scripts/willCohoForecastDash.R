@@ -1,17 +1,28 @@
 # call functions ----------------------------------------------------------
 ## create a list of functions
-fun.sources = list(
-  "Functions\\load_pack_fun.R",
-  "Functions\\round_fun.R",
-  "Functions\\dat_fun.R"
-)
+# fun.sources = lapply(
+#   list(
+#   "load_pack_fun.R",
+#   "round_fun.R",
+#   "dat_fun.R"
+# ),
+# function(x) paste0("Functions\\",x)
+# )
 
 ## load functions
 sapply(
-  fun.sources,
+  lapply(
+    list(
+      ### functions to source
+      "load_pack_fun.R",
+      "round_fun.R",
+      "dat_fun.R"
+    ),
+    function(x) paste0("Functions\\",x)
+  ),
   source,
   .GlobalEnv
-  )
+)
 
 # call packages -----------------------------------------------------------
 load_pack_fun()
@@ -31,22 +42,39 @@ dat_fun(begyr,endyr)
 
 # call models -------------------------------------------------------------
 ## create a list of models to source
-mod.sources = list(
-  "Models\\Kalman Filter.R",
-  "Models\\log-log LM.R",
-  "Models\\untransformed LM.R"
-)
+# mod.sources = lapply(
+#   list(
+#     "Kalman Filter.R",
+#     "log-log LM.R",
+#     "untransformed LM.R"
+#   ),
+#   function(x) paste0("Models\\",x)
+# )
 
 ## source models
 sapply(
-  mod.sources,
+  lapply(
+    list(
+      ### models to source
+      "Kalman Filter.R"
+      # "log-log LM.R",
+      # "untransformed LM.R"
+    ),
+    function(x) paste0("Models\\",x)
+  ),
   source,
   .GlobalEnv
 )
 
 ## create a list of model objects to iterate over
 ### these should be the same names assigned in the model files
-modList <- c(willCohoKF.logmod,
-             willCohoLM.logmod,
-             willCohoLM.mod)
+modList <- list(
+  willCohoKF.logmod
+                # "willCohoLM.logmod" = willCohoLM.logmod,
+                # "willCohoLM.mod" = willCohoLM.mod
+                )
 
+
+print(deparse(quote(modList)))
+names(modList[1])
+textConnection(willCohoKF.logmod)

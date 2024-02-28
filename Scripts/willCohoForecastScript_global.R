@@ -1,4 +1,4 @@
-willCoho_modFun <- function(modDesc){
+willCoho_modFun <- function(i){
 
 # create data frame to store output ---------------------------------------
 willCohoOut.dat <- data.frame(
@@ -102,7 +102,7 @@ willCoho_fun <- function(fitNum){
     data = willCohoMod.dat,
     # inits = inits.willComb,  # see above
     parameters.to.save = willCoho.params,
-    model.file = modDesc,
+    model.file = i,
     n.chains = 3,
     n.iter = 5000,
     n.burnin = 1000,
@@ -209,10 +209,11 @@ mape_est <- MAPE(
 )*100
 
 print(willCohoOut.dat)
+print(substitute(i))
 }
 
-for(modDesc in modList){
-  willCoho_modFun(eval(modDesc))
+for(i in modList){
+  willCoho_modFun(eval(i))
 }
 
 ###### NEED TO ADD HEAD TO GEOM_POINT
