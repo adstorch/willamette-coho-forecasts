@@ -1,5 +1,5 @@
 # log-log Kalman Filter ---------------------------------------------------
-willCohoKF.logmod <- function() {
+willCohoKF_logmod <- function() {
   
   # observation model
   for (i in 1:nObs){

@@ -1,4 +1,17 @@
+# initialize counter variable to track iterations of model function
+# to track function iterations --------------------------------------------
+cntr <- 0
+
+# create folder for predictions output ------------------------------------
+dir.create(file.path("Output/Predictions",willCohoInp.dat[nrow(willCohoInp.dat),1]))
+
+# create folder for figures ----------------------------------------------
+dir.create(file.path("Output/Figures",willCohoInp.dat[nrow(willCohoInp.dat),1]))
+
+# generic model/verification function -------------------------------------
 willCoho_modFun <- function(i){
+  
+  cntr <<- cntr + 1
 
 # create data frame to store output ---------------------------------------
 willCohoOut.dat <- data.frame(
@@ -203,26 +216,67 @@ for(fitNum in seq(
 # post <- willCohoOut.dat %>% 
 #   drop_na()
 
+## calculate mean absolute percent error (MAPE)
 # mape_est <- MAPE(
 #   head(willCohoOut.dat$post_pred,-1),
 #   na.omit(willCohoOut.dat$obs_cnt)
 # )*100
 
-# saveRDS(willCohoOut.dat, file = "Output\\Predictions\\stuff.rds")
-
 print(willCohoOut.dat)
-# print(namesi)
-for(i in 1:length(modList)){
-  print(i)
-}
 
-}
+## save output data frame as .rds file
+saveRDS(
+  willCohoOut.dat,
+  file = paste0(
+    "Output\\Predictions\\",
+    willCohoInp.dat[nrow(willCohoInp.dat),1],
+    "\\",
+    names(modList[cntr]),
+    "Out",
+    willCohoOut.dat[nrow(willCohoOut.dat),1],
+    ".RDS"
+  )
+)
 
-# counter <- 0
+## generate verification scatter plot
+willCoho.verifPlot<-ggplot() +
+  theme_bw()+
+  theme(panel.border = element_blank(),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.line = element_line(color = "black"),
+        axis.title.y = element_text(face = "bold", size = 16,vjust = 1,margin = margin(t = 0, r = 10, b = 0, l = 0),family = "Times New Roman"),
+        axis.title.x = element_text(face = "bold", size = 16,vjust = -1,margin = margin(t = 10, r = 0, b = 0, l = 0),family = "Times New Roman"),
+        axis.text.x = element_text(face = "bold",size = 16,color="black", vjust=0.5,family = "Times New Roman"),
+        axis.text.y = element_text(face = "bold",size = 16,color="black",family = "Times New Roman"),
+        legend.title = element_blank(),
+        plot.margin = margin(0.5, 1, 0.5, 0.5, "cm"),
+        legend.text=element_text(size=12),
+        axis.ticks.length = unit(0.15, "cm"))+
+  labs(title = names(modList[cntr]), y = "Observed", x = "Mean posterior predictions") +
+  theme(plot.title = element_text(hjust = 0.5,size = 16,face = "bold",family = "Times New Roman")) +
+  geom_abline(intercept = 0, slope = 1)+
+  geom_point(data = willCohoOut.dat,aes(post_pred,obs_cnt),shape = 19,size = 3.5,stroke=0.5)+
+  scale_y_continuous(limits=c(0,max(max(willCohoOut.dat$obs_cnt,na.rm = TRUE),max(willCohoOut.dat$post_pred, na.rm = TRUE))),breaks = seq(0,max(max(willCohoOut.dat$obs_cnt,na.rm = TRUE),max(willCohoOut.dat$post_pred, na.rm = TRUE)),4000),expand = c(0,0))+
+  scale_x_continuous(limits=c(0,max(max(willCohoOut.dat$obs_cnt,na.rm = TRUE),max(willCohoOut.dat$post_pred, na.rm = TRUE))),breaks = seq(0,max(max(willCohoOut.dat$obs_cnt,na.rm = TRUE),max(willCohoOut.dat$post_pred, na.rm = TRUE)),4000),expand = c(0,0))+
+  annotate(geom = "text",x = max(max(willCohoOut.dat$obs_cnt,na.rm = TRUE),max(willCohoOut.dat$post_pred, na.rm = TRUE))-(max(max(willCohoOut.dat$obs_cnt,na.rm = TRUE),max(willCohoOut.dat$post_pred, na.rm = TRUE)))+10, y = max(max(willCohoOut.dat$obs_cnt,na.rm = TRUE),max(willCohoOut.dat$post_pred, na.rm = TRUE))-(max(max(willCohoOut.dat$obs_cnt,na.rm = TRUE),max(willCohoOut.dat$post_pred, na.rm = TRUE))*0.10), label = paste("MAPE = ",round(MAPE(head(willCohoOut.dat$post_pred,-1),na.omit(willCohoOut.dat$obs_cnt))*100,2),"%",sep = ""),hjust=0,size = 5.1,family = "Times New Roman")
+
+
+png(filename=paste0("Output\\Figures\\",willCohoInp.dat[nrow(willCohoInp.dat),1],"\\",names(modList[cntr]),"Fig",willCohoOut.dat[nrow(willCohoOut.dat),1],".png"),
+    type="cairo",
+    units="in",
+    width=8,
+    height=6,
+    res=300)
+
+print(willCoho.verifPlot)
+dev.off()
+
+# print(mape_est)
+}
 
 for(i in modList){
   willCoho_modFun(i)
-  
 }
 
 ###### NEED TO ADD HEAD TO GEOM_POINT
@@ -249,7 +303,7 @@ willCoho.verifPlot<-ggplot() +
   annotate(geom = "text",x = 1500, y = 24000, label = paste("MAPE = ",round(MAPE(head(willCohoOut.dat$post_pred,-1),na.omit(willCohoOut.dat$obs_cnt))*100,2),"%",sep = ""),hjust=0,size = 5.1,family = "Times New Roman")
 
 
-png(filename=paste("Output\\Figures\\modDesc",Sys.Date(),".png",sep=""),
+png(filename=paste0("Output\\Figures\\modDesc",willCohoInp.dat[nrow(willCohoInp.dat),1],"\\",names(modList[cntr]),"Fig",willCohoOut.dat[nrow(willCohoOut.dat),1],".png"),
     type="cairo",
     units="in",
     width=8,
@@ -258,3 +312,7 @@ png(filename=paste("Output\\Figures\\modDesc",Sys.Date(),".png",sep=""),
 
 print(willCoho.verifPlot)
 dev.off()
+
+library
+test <- readRDS("Output\\Predictions\\willCohoKF_logmodOut.rds")
+test <- read_RDS_to_global("Output\\Predictions\\willCohoKF_logmodOut.rds", verbose = TRUE, pos = 1)

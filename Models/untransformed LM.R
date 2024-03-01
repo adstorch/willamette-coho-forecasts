@@ -49,4 +49,4 @@ cat('
       # tau.Walpha<-1/pow(sig.Walpha,2)
 
     }',
-    file={willCohoLM.mod <- tempfile()})
+    file={willCohoLM_mod <- tempfile()})

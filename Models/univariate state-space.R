@@ -11,4 +11,4 @@ for(m in 2:nHWobs) {
   EY[m] <- X[m];
   Y[m] ~ dnorm(EY[m], inv.r); 
 }',
-    file={willCohoUSP.mod <- tempfile()})
+    file={willCohoUSP_mod <- tempfile()})

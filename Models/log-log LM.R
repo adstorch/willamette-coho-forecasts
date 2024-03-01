@@ -1,5 +1,5 @@
 # log-log Linear Model ---------------------------------------------------
-willCohoLM.logmod <- function(){
+willCohoLM_logmod <- function(){
   
   # observation model
   for (i in 1:nObs){
